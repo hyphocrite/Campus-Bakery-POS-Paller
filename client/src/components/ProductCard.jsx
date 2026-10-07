@@ -11,10 +11,10 @@ export default function ProductCard({ product, quantity, onAdd, disabled }) {
   };
 
   return (
-    <article className="product-card">
+    <article className={`product-card ${added ? 'just-added' : ''}`}>
       <div className="product-media">
         <img className="product-thumb" src={product.image} alt={product.name} loading="lazy" />
-        {quantity > 0 && <span className="in-cart">×{quantity} in cart</span>}
+        {quantity > 0 && <span key={quantity} className="in-cart">×{quantity} in cart</span>}
       </div>
       <div className="product-info">
         <h3>{product.name}</h3>

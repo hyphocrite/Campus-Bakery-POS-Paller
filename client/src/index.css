@@ -391,6 +391,116 @@ input:focus { border-color: var(--terracotta); box-shadow: 0 0 0 3px rgba(194, 9
   .receipt { box-shadow: none; }
 }
 
+/* ---------- Animations ----------
+   Entrance animations use fill-mode "backwards" so they don't hold a transform
+   after finishing (which would block the hover lifts below). */
+:root { --ease-out: cubic-bezier(0.22, 1, 0.36, 1); --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes popIn { 0% { opacity: 0; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.45); } 100% { transform: scale(1); } }
+@keyframes cardPop { 0% { transform: scale(1); } 35% { transform: scale(0.97); } 70% { transform: scale(1.02); } 100% { transform: scale(1); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+@keyframes ripple { from { transform: scale(0); opacity: 0.35; } to { transform: scale(1); opacity: 0; } }
+@keyframes sheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(220%) skewX(-20deg); } }
+@keyframes float { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
+@keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+@keyframes ringPulse { 0% { box-shadow: 0 0 0 0 rgba(63, 122, 69, 0.45); } 100% { box-shadow: 0 0 0 22px rgba(63, 122, 69, 0); } }
+@keyframes slideUpBar { from { opacity: 0; transform: translate(-50%, 30px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes printOut { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 -20px 0); } }
+@keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+/* Page + content entrances */
+.page { animation: fadeUp 0.4s var(--ease-out) backwards; }
+.login-card { animation: fadeUp 0.55s var(--ease-out) 0.1s backwards; }
+.login-logo { display: inline-block; animation: float 4s ease-in-out infinite; }
+.stat-card, .product-card, .quick-action, .menu-list li, .order-table tbody tr, .method {
+  animation: fadeUp 0.45s var(--ease-out) backwards;
+}
+:is(.stat-card, .product-card, .quick-action, .menu-list li, .order-table tbody tr, .method):nth-child(2) { animation-delay: 0.05s; }
+:is(.stat-card, .product-card, .quick-action, .menu-list li, .order-table tbody tr, .method):nth-child(3) { animation-delay: 0.1s; }
+:is(.stat-card, .product-card, .quick-action, .menu-list li, .order-table tbody tr, .method):nth-child(4) { animation-delay: 0.15s; }
+:is(.stat-card, .product-card, .quick-action, .menu-list li, .order-table tbody tr, .method):nth-child(5) { animation-delay: 0.2s; }
+:is(.stat-card, .product-card, .quick-action, .menu-list li, .order-table tbody tr, .method):nth-child(6) { animation-delay: 0.25s; }
+
+.hero-banner { background-size: 200% 200%; animation: gradientShift 12s ease infinite; }
+
+/* Buttons: lift on hover, press on click, sheen across primary buttons */
+.btn, .chip, .method, .quick-action, .nav a, .qty button, .btn-remove { position: relative; overflow: hidden; }
+.btn { transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s var(--ease-spring); }
+.btn:hover:not(:disabled) { transform: translateY(-2px); }
+.btn-primary:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(194, 90, 63, 0.35); }
+.btn:active:not(:disabled) { transform: scale(0.96); transition-duration: 0.08s; }
+.btn-primary::after {
+  content: ''; position: absolute; inset: 0; width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  transform: translateX(-120%) skewX(-20deg); pointer-events: none;
+}
+.btn-primary:hover:not(:disabled)::after { animation: sheen 0.75s ease; }
+
+.ripple {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: currentColor; animation: ripple 0.6s var(--ease-out) forwards;
+}
+
+.chip, .method, .btn-remove { transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s var(--ease-spring), box-shadow 0.2s; }
+.chip:hover { transform: translateY(-2px); }
+.chip:active, .method:active, .btn-remove:active:not(:disabled) { transform: scale(0.94); }
+.method:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.method span { transition: transform 0.25s var(--ease-spring); }
+.method:hover span, .method.selected span { transform: scale(1.15); }
+
+.qty button { transition: background 0.15s, transform 0.15s var(--ease-spring); }
+.qty button:active:not(:disabled) { transform: scale(0.8); }
+
+/* Nav + brand */
+.nav a:active { transform: scale(0.95); }
+.brand-mark { display: inline-block; transition: transform 0.3s; }
+.brand:hover .brand-mark { animation: wiggle 0.5s ease; }
+.badge { display: inline-block; animation: bump 0.4s var(--ease-spring); }
+.bump { display: inline-block; animation: bump 0.4s var(--ease-spring); }
+
+/* Cards */
+.stat-card { transition: transform 0.25s var(--ease-out), box-shadow 0.25s; }
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.stat-card:hover .stat-icon { animation: wiggle 0.5s ease; }
+.quick-action span { transition: transform 0.3s var(--ease-spring); }
+.quick-action:hover span { transform: scale(1.2) translateY(-2px); }
+.quick-action:active { transform: scale(0.96); }
+.menu-list li { transition: background 0.2s, padding 0.25s var(--ease-out); border-radius: 8px; }
+.menu-list li:hover { background: var(--cream); padding-left: 0.6rem; padding-right: 0.6rem; }
+.item-thumb { transition: transform 0.25s var(--ease-spring); }
+.menu-list li:hover .item-thumb, .order-table tr:hover .item-thumb { transform: scale(1.12) rotate(-3deg); }
+.order-table tbody tr { transition: background 0.2s; }
+.order-table tbody tr:hover { background: var(--cream); }
+
+.product-card { transition: transform 0.3s var(--ease-out), box-shadow 0.3s, border-color 0.3s; }
+.product-card:hover { border-color: #e2c5b6; }
+.product-card.just-added { animation: cardPop 0.45s var(--ease-out); }
+.in-cart { animation: popIn 0.35s var(--ease-spring); }
+
+/* Cart bar, banners, alerts */
+.cart-bar { animation: slideUpBar 0.45s var(--ease-spring) backwards; }
+.locked-banner { animation: fadeUp 0.4s var(--ease-out) backwards; }
+.alert-error { animation: shake 0.4s ease; }
+
+/* Payment confirmation + receipt */
+.confirm-card { animation: popIn 0.5s var(--ease-spring) backwards; }
+.confirm-icon { animation: popIn 0.5s var(--ease-spring) 0.2s backwards, ringPulse 1.2s ease-out 0.5s 2; }
+.confirm-change strong { display: inline-block; animation: bump 0.6s var(--ease-spring) 0.6s backwards; }
+.receipt { animation: printOut 0.9s var(--ease-out) backwards; }
+.receipt-actions { animation: fadeUp 0.4s var(--ease-out) 0.6s backwards; }
+
+/* Respect users who turn off motion in their OS settings */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }

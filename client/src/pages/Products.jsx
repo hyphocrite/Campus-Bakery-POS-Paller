@@ -30,7 +30,7 @@ export default function Products() {
       {itemCount > 0 && !locked && (
         <div className="cart-bar">
           <span>
-            🛒 <strong>{itemCount}</strong> item{itemCount > 1 ? 's' : ''} · <strong>{centsToPeso(totalCents)}</strong>
+            🛒 <strong key={itemCount} className="bump">{itemCount}</strong> item{itemCount > 1 ? 's' : ''} · <strong>{centsToPeso(totalCents)}</strong>
           </span>
           <Link to="/order-summary" className="btn btn-light">Review Order →</Link>
         </div>

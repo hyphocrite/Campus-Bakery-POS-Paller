@@ -24,7 +24,8 @@ export default function Layout() {
           <NavLink to="/products">Products</NavLink>
           <NavLink to="/order-summary">
             Order Summary
-            {itemCount > 0 && <span className="badge">{itemCount}</span>}
+            {/* key changes with the count, so the bump animation replays on every add */}
+            {itemCount > 0 && <span key={itemCount} className="badge">{itemCount}</span>}
           </NavLink>
         </nav>
         <div className="user-area">

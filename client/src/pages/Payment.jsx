@@ -21,9 +21,12 @@ export default function Payment() {
     completePayment,
   } = useCart();
   const [saving, setSaving] = useState(false);
+  // Counts submit attempts; used as the error's key so the shake replays even for the same message.
+  const [attempt, setAttempt] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setAttempt((n) => n + 1);
 
     // Run the checks in order; show the first error and stop.
     const result = validatePayment({ itemCount, input: paymentInput, totalCents });
@@ -143,7 +146,7 @@ export default function Payment() {
           )}
 
           {paymentError && (
-            <p id="payment-error" className="alert alert-error" role="alert">
+            <p key={attempt} id="payment-error" className="alert alert-error" role="alert">
               {paymentError}
             </p>
           )}
