@@ -48,7 +48,7 @@ export default function Receipt() {
                     {i.name}
                     <small>{i.quantity} × {peso(i.price)}</small>
                   </td>
-                  <td className="right">{peso(i.price * i.quantity)}</td>
+                  <td className="right">{peso(i.subtotal)}</td>
                 </tr>
               ))}
             </tbody>

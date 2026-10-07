@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Steps from '../components/Steps';
 import { useCart } from '../context/CartContext';
 import { peso } from '../data/format';
+import { computeChange } from '../data/cart';
 
 const METHODS = [
   { id: 'cash', label: 'Cash', icon: '💵' },
@@ -31,7 +32,7 @@ export default function Payment() {
   }
 
   const paid = method === 'cash' ? Number(tendered) || 0 : total;
-  const change = paid - total;
+  const change = computeChange(paid, total);
   const canPay = paid >= total;
   const quickCash = [...new Set([total, Math.ceil(total / 50) * 50, Math.ceil(total / 100) * 100, 500, 1000])]
     .filter((v) => v >= total)

@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import { peso } from '../data/format';
 
 export default function OrderSummary() {
-  const { items, itemCount, total, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { items, itemCount, total, increase, decrease, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -44,19 +44,29 @@ export default function OrderSummary() {
                 {items.map((i) => (
                   <tr key={i.id}>
                     <td>
-                      <span className="menu-emoji">{i.emoji}</span> {i.name}
+                      <div className="item-cell">
+                        <img className="item-thumb" src={i.image} alt="" />
+                        <span className="strong">{i.name}</span>
+                      </div>
                     </td>
                     <td>{peso(i.price)}</td>
                     <td>
                       <div className="qty">
-                        <button onClick={() => updateQuantity(i.id, i.quantity - 1)} aria-label="Decrease">−</button>
+                        <button
+                          onClick={() => decrease(i.id)}
+                          disabled={i.quantity === 1}
+                          aria-label={`Decrease ${i.name}`}
+                          title={i.quantity === 1 ? 'Minimum is 1. Use Remove to take it off the order.' : undefined}
+                        >
+                          −
+                        </button>
                         <span>{i.quantity}</span>
-                        <button onClick={() => updateQuantity(i.id, i.quantity + 1)} aria-label="Increase">+</button>
+                        <button onClick={() => increase(i.id)} aria-label={`Increase ${i.name}`}>+</button>
                       </div>
                     </td>
-                    <td className="right strong">{peso(i.price * i.quantity)}</td>
+                    <td className="right strong">{peso(i.subtotal)}</td>
                     <td className="right">
-                      <button className="icon-btn" onClick={() => removeFromCart(i.id)} aria-label="Remove">✕</button>
+                      <button className="btn-remove" onClick={() => removeFromCart(i.id)}>Remove</button>
                     </td>
                   </tr>
                 ))}

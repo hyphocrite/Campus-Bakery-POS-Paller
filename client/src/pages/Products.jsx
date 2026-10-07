@@ -6,7 +6,8 @@ import products from '../data/products';
 import { peso } from '../data/format';
 
 export default function Products() {
-  const { addToCart, itemCount, total } = useCart();
+  const { items, addToCart, itemCount, total } = useCart();
+  const qtyInCart = (id) => items.find((i) => i.id === id)?.quantity ?? 0;
 
   return (
     <div className="page">
@@ -20,7 +21,7 @@ export default function Products() {
 
       <div className="product-grid">
         {products.map((p) => (
-          <ProductCard key={p.id} product={p} onAdd={addToCart} />
+          <ProductCard key={p.id} product={p} quantity={qtyInCart(p.id)} onAdd={addToCart} />
         ))}
       </div>
 

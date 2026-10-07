@@ -48,7 +48,7 @@ export default function Dashboard() {
           <ul className="menu-list">
             {products.map((p) => (
               <li key={p.id}>
-                <span className="menu-emoji">{p.emoji}</span>
+                <img className="item-thumb" src={p.image} alt="" />
                 <span className="menu-name">{p.name}</span>
                 <span className="menu-price">{peso(p.price)}</span>
               </li>
