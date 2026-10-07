@@ -1,56 +1,94 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Steps from '../components/Steps';
+import NewTransactionButton from '../components/NewTransactionButton';
 import { useCart } from '../context/CartContext';
-import { peso } from '../data/format';
-import { computeChange } from '../data/cart';
+import { centsToPeso } from '../data/format';
+import { validatePayment } from '../data/payment';
 
-const METHODS = [
-  { id: 'cash', label: 'Cash', icon: '💵' },
-  { id: 'gcash', label: 'GCash', icon: '📱' },
-  { id: 'card', label: 'Card', icon: '💳' },
-];
+const SERVER_ERROR = 'Could not save the transaction. Make sure the server is running and try again.';
 
 export default function Payment() {
-  const { items, total, clearCart, setLastOrder } = useCart();
-  const navigate = useNavigate();
-  const [method, setMethod] = useState('cash');
-  const [tendered, setTendered] = useState('');
+  const {
+    items,
+    itemCount,
+    totalCents,
+    paymentInput,
+    setPaymentInput,
+    paymentError,
+    setPaymentError,
+    transaction,
+    completePayment,
+  } = useCart();
+  const [saving, setSaving] = useState(false);
 
-  if (items.length === 0) {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Run the checks in order; show the first error and stop.
+    const result = validatePayment({ itemCount, input: paymentInput, totalCents });
+    if (!result.ok) {
+      setPaymentError(result.error);
+      return;
+    }
+
+    // Valid: save to SQLite. The server returns the saved transaction with its TXN number.
+    setPaymentError('');
+    setSaving(true);
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
+          amountPaidCents: result.amountCents,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPaymentError(data.error || SERVER_ERROR);
+        return;
+      }
+      completePayment(data);
+    } catch {
+      setPaymentError(SERVER_ERROR);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // After a valid payment: green confirmation with the transaction number and change.
+  if (transaction) {
     return (
       <div className="page">
-        <Steps current={2} />
-        <div className="card empty-state">
-          <span className="empty-icon">💳</span>
-          <h2>Nothing to pay for</h2>
-          <p className="muted">Your order is empty. Add products first.</p>
-          <Link to="/products" className="btn btn-primary">Browse Products</Link>
+        <Steps current={3} />
+        <div className="confirm-card">
+          <div className="confirm-icon">✓</div>
+          <h1>Payment Successful</h1>
+          <p className="confirm-txn">{transaction.txnNumber}</p>
+          <div className="confirm-rows">
+            <div><span>Total</span><span>{centsToPeso(transaction.totalCents)}</span></div>
+            <div><span>Cash Paid</span><span>{centsToPeso(transaction.amountPaidCents)}</span></div>
+          </div>
+          <div className="confirm-change">
+            <span>Change</span>
+            <strong>{centsToPeso(transaction.changeCents)}</strong>
+          </div>
+          <div className="confirm-actions">
+            <Link to="/receipt" className="btn btn-ghost btn-lg">View Receipt</Link>
+            <NewTransactionButton className="btn btn-primary btn-lg" />
+          </div>
         </div>
       </div>
     );
   }
 
-  const paid = method === 'cash' ? Number(tendered) || 0 : total;
-  const change = computeChange(paid, total);
-  const canPay = paid >= total;
-  const quickCash = [...new Set([total, Math.ceil(total / 50) * 50, Math.ceil(total / 100) * 100, 500, 1000])]
-    .filter((v) => v >= total)
-    .slice(0, 4);
-
-  const handleConfirm = () => {
-    setLastOrder({
-      number: String(Date.now()).slice(-6),
-      date: new Date(),
-      items,
-      total,
-      method: METHODS.find((m) => m.id === method).label,
-      paid,
-      change,
-    });
-    clearCart();
-    navigate('/receipt');
-  };
+  const quickCash =
+    totalCents > 0
+      ? [...new Set([totalCents, Math.ceil(totalCents / 5000) * 5000, Math.ceil(totalCents / 10000) * 10000, 50000, 100000])]
+          .filter((v) => v >= totalCents)
+          .slice(0, 4)
+      : [];
 
   return (
     <div className="page">
@@ -58,68 +96,67 @@ export default function Payment() {
       <div className="page-header">
         <div>
           <h1>Payment</h1>
-          <p className="muted">Select a payment method and confirm.</p>
+          <p className="muted">Enter the cash received from the customer.</p>
         </div>
       </div>
 
       <div className="two-col">
-        <section className="card">
-          <h2>Payment Method</h2>
-          <div className="method-grid">
-            {METHODS.map((m) => (
-              <button
-                key={m.id}
-                className={`method ${method === m.id ? 'selected' : ''}`}
-                onClick={() => setMethod(m.id)}
-              >
-                <span>{m.icon}</span>
-                {m.label}
-              </button>
-            ))}
-          </div>
+        <form className="card" onSubmit={handleSubmit} noValidate>
+          <h2>Cash Payment</h2>
+          <label className="field">
+            Amount Paid
+            {/* type="text" (not "number") so non-numeric input like "abc" reaches our validation */}
+            <div className={`input-prefix ${paymentError ? 'has-error' : ''}`}>
+              <span>₱</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={paymentInput}
+                onChange={(e) => {
+                  setPaymentInput(e.target.value);
+                  if (paymentError) setPaymentError('');
+                }}
+                placeholder="0.00"
+                aria-invalid={Boolean(paymentError)}
+                aria-describedby="payment-error"
+              />
+            </div>
+          </label>
 
-          {method === 'cash' ? (
-            <>
-              <label className="field">
-                Amount Tendered
-                <div className="input-prefix">
-                  <span>₱</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={tendered}
-                    onChange={(e) => setTendered(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-              </label>
-              <div className="quick-cash">
-                {quickCash.map((v) => (
-                  <button key={v} className="chip" onClick={() => setTendered(String(v))}>
-                    {peso(v)}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="note">
-              {method === 'gcash' ? 'Ask the customer to scan the store QR code.' : 'Insert or tap the card on the terminal.'}{' '}
-              The exact amount of <strong>{peso(total)}</strong> will be charged.
+          {quickCash.length > 0 && (
+            <div className="quick-cash">
+              {quickCash.map((v) => (
+                <button
+                  type="button"
+                  key={v}
+                  className="chip"
+                  onClick={() => {
+                    setPaymentInput((v / 100).toFixed(2));
+                    setPaymentError('');
+                  }}
+                >
+                  {centsToPeso(v)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {paymentError && (
+            <p id="payment-error" className="alert alert-error" role="alert">
+              {paymentError}
             </p>
           )}
-        </section>
+
+          <button type="submit" className="btn btn-primary btn-block btn-lg pay-btn" disabled={saving}>
+            {saving ? 'Saving…' : 'Confirm Payment'}
+          </button>
+        </form>
 
         <aside className="card summary-card">
           <h2>Amount Due</h2>
-          <p className="amount-due">{peso(total)}</p>
-          <div className="summary-row"><span>Paid</span><span>{peso(paid)}</span></div>
-          <div className={`summary-row total ${change < 0 ? 'negative' : ''}`}>
-            <span>{change < 0 ? 'Remaining' : 'Change'}</span>
-            <span>{peso(Math.abs(change))}</span>
-          </div>
-          <button className="btn btn-primary btn-block btn-lg" disabled={!canPay} onClick={handleConfirm}>
-            Confirm Payment
-          </button>
+          <p className="amount-due">{centsToPeso(totalCents)}</p>
+          <div className="summary-row"><span>Items</span><span>{itemCount}</span></div>
           <Link to="/order-summary" className="btn btn-ghost btn-block">← Back to Order</Link>
         </aside>
       </div>

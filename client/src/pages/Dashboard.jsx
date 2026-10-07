@@ -2,18 +2,18 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import products from '../data/products';
-import { peso } from '../data/format';
+import { centsToPeso, peso } from '../data/format';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { itemCount, total, lastOrder } = useCart();
+  const { itemCount, totalCents, transaction } = useCart();
   const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   const stats = [
     { label: 'Products on Menu', value: products.length, icon: '🧺' },
     { label: 'Items in Cart', value: itemCount, icon: '🛒' },
-    { label: 'Current Cart Total', value: peso(total), icon: '💰' },
-    { label: 'Last Receipt', value: lastOrder ? `#${lastOrder.number}` : '—', icon: '🧾' },
+    { label: 'Current Cart Total', value: centsToPeso(totalCents), icon: '💰' },
+    { label: 'Paid Transaction', value: transaction ? transaction.txnNumber : '—', icon: '🧾' },
   ];
 
   return (
@@ -71,7 +71,7 @@ export default function Dashboard() {
               <span>💳</span>Payment
             </Link>
             <Link to="/receipt" className="quick-action">
-              <span>🧾</span>Last Receipt
+              <span>🧾</span>Receipt
             </Link>
           </div>
         </section>

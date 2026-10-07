@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
 import Steps from '../components/Steps';
+import NewTransactionButton from '../components/NewTransactionButton';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { peso } from '../data/format';
+import { centsToPeso, formatDateTime } from '../data/format';
 
 export default function Receipt() {
-  const { lastOrder: order } = useCart();
+  const { transaction: txn } = useCart();
   const { user } = useAuth();
 
-  if (!order) {
+  if (!txn) {
     return (
       <div className="page">
         <Steps current={3} />
@@ -22,6 +23,7 @@ export default function Receipt() {
     );
   }
 
+  // Everything below comes from the saved SQLite transaction, not the live cart.
   return (
     <div className="page">
       <Steps current={4} />
@@ -31,33 +33,39 @@ export default function Receipt() {
             <span className="receipt-logo">🥐</span>
             <h2>Campus Bakery</h2>
             <p>Main Campus Canteen, Ground Floor</p>
-            <p className="success-pill">✓ Payment Successful</p>
           </div>
 
           <div className="receipt-meta">
-            <div><span>Receipt #</span><span>{order.number}</span></div>
-            <div><span>Date</span><span>{order.date.toLocaleString('en-PH')}</span></div>
+            <div><span>Transaction No.</span><strong>{txn.txnNumber}</strong></div>
+            <div><span>Date &amp; Time</span><span>{formatDateTime(txn.createdAt)}</span></div>
             <div><span>Cashier</span><span>{user}</span></div>
           </div>
 
           <table className="receipt-items">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th className="center">Qty</th>
+                <th className="right">Unit Price</th>
+                <th className="right">Subtotal</th>
+              </tr>
+            </thead>
             <tbody>
-              {order.items.map((i) => (
-                <tr key={i.id}>
-                  <td>
-                    {i.name}
-                    <small>{i.quantity} × {peso(i.price)}</small>
-                  </td>
-                  <td className="right">{peso(i.subtotal)}</td>
+              {txn.items.map((i) => (
+                <tr key={i.productId}>
+                  <td>{i.name}</td>
+                  <td className="center">{i.quantity}</td>
+                  <td className="right">{centsToPeso(i.unitPriceCents)}</td>
+                  <td className="right">{centsToPeso(i.subtotalCents)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
           <div className="receipt-totals">
-            <div className="grand"><span>TOTAL</span><span>{peso(order.total)}</span></div>
-            <div><span>{order.method}</span><span>{peso(order.paid)}</span></div>
-            <div><span>Change</span><span>{peso(order.change)}</span></div>
+            <div className="grand"><span>TOTAL</span><span>{centsToPeso(txn.totalCents)}</span></div>
+            <div><span>Cash Paid</span><span>{centsToPeso(txn.amountPaidCents)}</span></div>
+            <div><span>Change</span><span>{centsToPeso(txn.changeCents)}</span></div>
           </div>
 
           <p className="receipt-thanks">Thank you, and enjoy your bread! 🍞</p>
@@ -65,8 +73,7 @@ export default function Receipt() {
 
         <div className="receipt-actions">
           <button className="btn btn-ghost" onClick={() => window.print()}>🖨 Print</button>
-          <Link to="/products" className="btn btn-primary">New Order</Link>
-          <Link to="/" className="btn btn-ghost">Dashboard</Link>
+          <NewTransactionButton />
         </div>
       </div>
     </div>
